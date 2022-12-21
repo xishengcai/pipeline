@@ -38,6 +38,7 @@ type repository struct {
 	HTTPURL       string      `json:"http_url_to_repo"`
 	Namespace     namespace   `json:"namespace"`
 	Permissions   permissions `json:"permissions"`
+	CreatedAt     time.Time   `json:"created_at"`
 }
 
 type namespace struct {
@@ -459,8 +460,10 @@ func (s *repositoryService) DeleteHook(ctx context.Context, repo, id string) (*s
 	return s.client.do(ctx, "DELETE", path, nil, nil)
 }
 
-func (s *repositoryService) Delete(context.Context, string) (*scm.Response, error) {
-	return nil, scm.ErrNotSupported
+// Delete a given repo by 'name' or 'namespace/name'
+func (s *repositoryService) Delete(ctx context.Context, repo string) (*scm.Response, error) {
+	path := fmt.Sprintf("api/v4/projects/%s", encode(repo))
+	return s.client.do(ctx, "DELETE", path, nil, nil)
 }
 
 // helper function to convert from the gogs repository list to
@@ -493,6 +496,7 @@ func convertRepository(from *repository) *scm.Repository {
 		Clone:     from.HTTPURL,
 		CloneSSH:  from.SSHURL,
 		Link:      from.WebURL,
+		Created:   from.CreatedAt,
 		Perm: &scm.Perm{
 			Pull:  true,
 			Push:  canPush(from),
